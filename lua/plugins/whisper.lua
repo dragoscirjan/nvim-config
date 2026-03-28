@@ -1,42 +1,39 @@
 -- whisper-stream installation:
---
--- macOS (Homebrew):
---   brew install whisper-cpp
---   Binary is at: /opt/homebrew/bin/whisper-stream (ARM) or /usr/local/bin/whisper-stream (Intel)
---   whisper.nvim auto-detects these paths — no binary_path needed on macOS.
---
--- Linux/Fedora (build from source — whisper-cpp package ships libraries only, no binary):
---   sudo dnf install -y cmake whisper-cpp-devel SDL2-devel vulkan-loader-devel glslc
---   git clone --depth=1 https://github.com/ggerganov/whisper.cpp /tmp/whisper-build
---   cmake -S /tmp/whisper-build -B /tmp/whisper-build/build -DWHISPER_SDL2=ON -DGGML_VULKAN=ON -DCMAKE_BUILD_TYPE=Release
---   cmake --build /tmp/whisper-build/build --target whisper-stream -j$(nproc)
---   mkdir -p ~/.local/bin && cp /tmp/whisper-build/build/bin/whisper-stream ~/.local/bin/
+--   macOS & Linux: run whisper-install.sh (builds to ~/bin/whisper.cpp/build/bin/whisper-stream)
+--   NixOS: installed via system package, auto-detected from PATH
 
 local is_linux = vim.fn.has("linux") == 1
+local is_mac = vim.fn.has("mac") == 1
+local is_nixos = vim.fn.filereadable("/etc/NIXOS") == 1
 
 return {
   {
     "Avi-D-coder/whisper.nvim",
     config = function()
       local opts = {
-        model = "base.en",
+        model = is_linux and "base.en" or "small.en",
         keybind = "<C-g>",
         manual_trigger_key = "<Space>",
         debug = true, -- logs to /tmp/whisper-debug.log
       }
 
-      if is_linux then
-        -- Linux: binary must be built manually (see comment above)
-        opts.binary_path = vim.fn.expand("~/.local/bin/whisper-stream")
+      -- Timing: step_ms < length_ms gives overlapping windows for better quality;
+      -- the plugin's poll_transcription_file is patched with a stabilization
+      -- buffer that holds text until it stops being refined by the sliding window.
+      opts.step_ms = 5000          -- transcribe every 5s
+      opts.length_ms = 8000        -- 8s audio context (3s overlap between windows)
+      opts.poll_interval_ms = 3000 -- check for new text every 3s
+
+      if not is_nixos and (is_mac or is_linux) then
+        -- macOS & Linux: use custom build from ~/bin/whisper.cpp (built by whisper-install.sh)
+        -- NixOS: whisper-stream works well from the system package, auto-detected via PATH
+        opts.binary_path = vim.fn.expand("~/bin/whisper.cpp/build/bin/whisper-stream")
+      end
+
+      if is_linux and not is_nixos then
         -- Lower VAD threshold — default 0.60 is too aggressive on Linux/PipeWire
         opts.vad_thold = 0.20
-        -- Tune for responsiveness: step_ms = how often a chunk is transcribed
-        -- length_ms = total audio context (must be >= step_ms)
-        opts.step_ms = 5000
-        opts.length_ms = 8000
-        opts.poll_interval_ms = 5000
       end
-      -- macOS: binary_path left nil → auto-detected from Homebrew paths by the plugin
 
       require("whisper").setup(opts)
     end,
