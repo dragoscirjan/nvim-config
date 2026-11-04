@@ -41,3 +41,6 @@ luac.out
 
 # Lazy
 lazy-lock.json
+
+# Local web stash
+.web_stash.db

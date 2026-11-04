@@ -1,0 +1,516 @@
+{
+  "$schema": "./skills/sync-agent-assets/assets/ai-assets-lock.schema.json",
+  "schemaVersion": 1,
+  "managerVersion": "1.1.0",
+  "source": {
+    "repository": "https://github.com/dragoscirjan/ai.git",
+    "ref": "main",
+    "commit": "b033a6b3e3906f46c7e227dcb2f102307e77ca0b"
+  },
+  "selection": {
+    "selectedSkills": [
+      "asd-ste100-technical",
+      "cleanup-workspaces",
+      "code-review",
+      "coding",
+      "coding-bash",
+      "coding-lua",
+      "coding-sh",
+      "grill-me",
+      "grilling",
+      "instruction-maintenance",
+      "isolated-workspace",
+      "sync-agent-assets",
+      "unslop",
+      "wait-what"
+    ],
+    "declinedSkills": [
+      {
+        "name": "caveman",
+        "reason": "The owner selected full-sentence plain-language guidance instead of terse fragment style."
+      },
+      {
+        "name": "init-project",
+        "reason": "This existing Neovim configuration does not need Node, pnpm, mise, or Husky initialization."
+      }
+    ],
+    "rootFiles": [
+      "AGENTS.md",
+      "CLAUDE.md",
+      "CONTRIBUTING.md",
+      "VALIDATION.md"
+    ],
+    "adaptations": {
+      "AGENTS.md": "Describes the LazyVim configuration, requires Git workspaces from main with an owner-approved full branch name, and preserves explicit publication authority.",
+      "CLAUDE.md": "Imports the shared AGENTS.md instruction graph without additional Claude-specific policy.",
+      "CONTRIBUTING.md": "Uses task-scoped changes without imposing an issue or pull-request workflow and preserves the repository's Neovim layout.",
+      "VALIDATION.md": "Requires static agent-asset and source checks while keeping Neovim startup optional because it can modify user data or fetch plugins."
+    },
+    "retainedFiles": []
+  },
+  "catalogSkills": [
+    "asd-ste100-technical",
+    "caveman",
+    "cleanup-workspaces",
+    "code-review",
+    "coding",
+    "coding-bash",
+    "coding-c",
+    "coding-cjs",
+    "coding-cpp",
+    "coding-cts",
+    "coding-gdscript",
+    "coding-go",
+    "coding-js",
+    "coding-jsx",
+    "coding-lua",
+    "coding-mjs",
+    "coding-mts",
+    "coding-php",
+    "coding-py",
+    "coding-pyi",
+    "coding-rs",
+    "coding-sh",
+    "coding-swift",
+    "coding-ts",
+    "coding-tsx",
+    "coding-zig",
+    "grill-me",
+    "grilling",
+    "init-gdscript",
+    "init-project",
+    "init-typescript",
+    "instruction-maintenance",
+    "isolated-workspace",
+    "sync-agent-assets",
+    "unslop",
+    "wait-what"
+  ],
+  "files": {
+    ".agents/skills/asd-ste100-technical/README.md": {
+      "kind": "skill",
+      "skill": "asd-ste100-technical",
+      "sourcePath": ".agents/skills/asd-ste100-technical/README.md",
+      "sourceSha256": "01fdd0a0d08f832add4f497e0380c8ec57e0d0540e683702576626518fbee037",
+      "installedSha256": "01fdd0a0d08f832add4f497e0380c8ec57e0d0540e683702576626518fbee037"
+    },
+    ".agents/skills/asd-ste100-technical/SKILL.md": {
+      "kind": "skill",
+      "skill": "asd-ste100-technical",
+      "sourcePath": ".agents/skills/asd-ste100-technical/SKILL.md",
+      "sourceSha256": "01e3ec74fddf6eb929a45ef1ba0b52cec95ac4b0115297884f4951460e653911",
+      "installedSha256": "01e3ec74fddf6eb929a45ef1ba0b52cec95ac4b0115297884f4951460e653911"
+    },
+    ".agents/skills/cleanup-workspaces/README.md": {
+      "kind": "skill",
+      "skill": "cleanup-workspaces",
+      "sourcePath": ".agents/skills/cleanup-workspaces/README.md",
+      "sourceSha256": "4e176e88d71a40662f75bf42200af27c72e7e79f293354f16aee22c1bea530ae",
+      "installedSha256": "4e176e88d71a40662f75bf42200af27c72e7e79f293354f16aee22c1bea530ae"
+    },
+    ".agents/skills/cleanup-workspaces/scripts/cleanup.test.ts": {
+      "kind": "skill",
+      "skill": "cleanup-workspaces",
+      "sourcePath": ".agents/skills/cleanup-workspaces/scripts/cleanup.test.ts",
+      "sourceSha256": "872c50c45775a12a92aa3c10956e61e9e09f1b27ee855172db4633f1c138d474",
+      "installedSha256": "872c50c45775a12a92aa3c10956e61e9e09f1b27ee855172db4633f1c138d474"
+    },
+    ".agents/skills/cleanup-workspaces/scripts/cleanup.ts": {
+      "kind": "skill",
+      "skill": "cleanup-workspaces",
+      "sourcePath": ".agents/skills/cleanup-workspaces/scripts/cleanup.ts",
+      "sourceSha256": "e3cde0ecc5f749dfb6417399e77b0ccbec6dbe25d26b837f3a41e584d7befb3d",
+      "installedSha256": "e3cde0ecc5f749dfb6417399e77b0ccbec6dbe25d26b837f3a41e584d7befb3d"
+    },
+    ".agents/skills/cleanup-workspaces/SKILL.md": {
+      "kind": "skill",
+      "skill": "cleanup-workspaces",
+      "sourcePath": ".agents/skills/cleanup-workspaces/SKILL.md",
+      "sourceSha256": "e4d2c150a00de763af56b37bee55123b0cc898c52504a5901fcdb2b1d7ce3177",
+      "installedSha256": "e4d2c150a00de763af56b37bee55123b0cc898c52504a5901fcdb2b1d7ce3177"
+    },
+    ".agents/skills/code-review/agents/openai.yaml": {
+      "kind": "skill",
+      "skill": "code-review",
+      "sourcePath": ".agents/skills/code-review/agents/openai.yaml",
+      "sourceSha256": "8229ca854e11dc8e6aef2131ee03f31fb1561cf905fab9ccc325180cf3331352",
+      "installedSha256": "8229ca854e11dc8e6aef2131ee03f31fb1561cf905fab9ccc325180cf3331352"
+    },
+    ".agents/skills/code-review/LICENSE": {
+      "kind": "skill",
+      "skill": "code-review",
+      "sourcePath": ".agents/skills/code-review/LICENSE",
+      "sourceSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+      "installedSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+    },
+    ".agents/skills/code-review/SKILL.md": {
+      "kind": "skill",
+      "skill": "code-review",
+      "sourcePath": ".agents/skills/code-review/SKILL.md",
+      "sourceSha256": "ccdcc47e264f8a52f49a9644aa01e2d7ffb5d8405f2a3e7edfe84bb62ff307a8",
+      "installedSha256": "ccdcc47e264f8a52f49a9644aa01e2d7ffb5d8405f2a3e7edfe84bb62ff307a8"
+    },
+    ".agents/skills/coding-bash/README.md": {
+      "kind": "skill",
+      "skill": "coding-bash",
+      "sourcePath": ".agents/skills/coding-bash/README.md",
+      "sourceSha256": "a1fb372b57351924ee1a3766319905ededf6d90e53cd4a38f63b75bea730629e",
+      "installedSha256": "a1fb372b57351924ee1a3766319905ededf6d90e53cd4a38f63b75bea730629e"
+    },
+    ".agents/skills/coding-bash/SKILL.md": {
+      "kind": "skill",
+      "skill": "coding-bash",
+      "sourcePath": ".agents/skills/coding-bash/SKILL.md",
+      "sourceSha256": "8c7ac36ea567721925c05ae5958bfdced0ea22e5cc8031e2bfe06ce5622a1bfa",
+      "installedSha256": "8c7ac36ea567721925c05ae5958bfdced0ea22e5cc8031e2bfe06ce5622a1bfa"
+    },
+    ".agents/skills/coding-lua/README.md": {
+      "kind": "skill",
+      "skill": "coding-lua",
+      "sourcePath": ".agents/skills/coding-lua/README.md",
+      "sourceSha256": "20d4b7ade47b00823ac354725057670fbd94657d31f977b22af1c0d16b58b53b",
+      "installedSha256": "20d4b7ade47b00823ac354725057670fbd94657d31f977b22af1c0d16b58b53b"
+    },
+    ".agents/skills/coding-lua/SKILL.md": {
+      "kind": "skill",
+      "skill": "coding-lua",
+      "sourcePath": ".agents/skills/coding-lua/SKILL.md",
+      "sourceSha256": "abd826c23f5554ae3e5aa37354190307e6affb41f2af770ae77df09b0dc801b6",
+      "installedSha256": "abd826c23f5554ae3e5aa37354190307e6affb41f2af770ae77df09b0dc801b6"
+    },
+    ".agents/skills/coding-sh/README.md": {
+      "kind": "skill",
+      "skill": "coding-sh",
+      "sourcePath": ".agents/skills/coding-sh/README.md",
+      "sourceSha256": "d97b91efb7e983b7038cdbceea660796d9c3fe475ab8108de87bcf889f9840a9",
+      "installedSha256": "d97b91efb7e983b7038cdbceea660796d9c3fe475ab8108de87bcf889f9840a9"
+    },
+    ".agents/skills/coding-sh/SKILL.md": {
+      "kind": "skill",
+      "skill": "coding-sh",
+      "sourcePath": ".agents/skills/coding-sh/SKILL.md",
+      "sourceSha256": "abaec843703e08f9566173ee17338065da46aa041f16002f4c9fa9df85cb1745",
+      "installedSha256": "abaec843703e08f9566173ee17338065da46aa041f16002f4c9fa9df85cb1745"
+    },
+    ".agents/skills/coding/README.md": {
+      "kind": "skill",
+      "skill": "coding",
+      "sourcePath": ".agents/skills/coding/README.md",
+      "sourceSha256": "ac29bbe334cc36880ea90ca3798924f62ea095e69fba4970886044f57342ac68",
+      "installedSha256": "ac29bbe334cc36880ea90ca3798924f62ea095e69fba4970886044f57342ac68"
+    },
+    ".agents/skills/coding/SKILL.md": {
+      "kind": "skill",
+      "skill": "coding",
+      "sourcePath": ".agents/skills/coding/SKILL.md",
+      "sourceSha256": "fa2028dbb907f9087c75f4e6c14f8fc2e6bbb7fbfc22cb7a6ecb1408b2b11b7b",
+      "installedSha256": "fa2028dbb907f9087c75f4e6c14f8fc2e6bbb7fbfc22cb7a6ecb1408b2b11b7b"
+    },
+    ".agents/skills/grill-me/agents/openai.yaml": {
+      "kind": "skill",
+      "skill": "grill-me",
+      "sourcePath": ".agents/skills/grill-me/agents/openai.yaml",
+      "sourceSha256": "c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b",
+      "installedSha256": "c061e39c3e0f9d865fb1b97556d485704af2a8a58f4b8221a8917a5c2074a32b"
+    },
+    ".agents/skills/grill-me/LICENSE": {
+      "kind": "skill",
+      "skill": "grill-me",
+      "sourcePath": ".agents/skills/grill-me/LICENSE",
+      "sourceSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+      "installedSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+    },
+    ".agents/skills/grill-me/README.md": {
+      "kind": "skill",
+      "skill": "grill-me",
+      "sourcePath": ".agents/skills/grill-me/README.md",
+      "sourceSha256": "ac8de3fef017de9cb740ec2f486ed26abc91802561bb8aa41c6f1e16fa011688",
+      "installedSha256": "ac8de3fef017de9cb740ec2f486ed26abc91802561bb8aa41c6f1e16fa011688"
+    },
+    ".agents/skills/grill-me/SKILL.md": {
+      "kind": "skill",
+      "skill": "grill-me",
+      "sourcePath": ".agents/skills/grill-me/SKILL.md",
+      "sourceSha256": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637",
+      "installedSha256": "caaf8b8de1684f96e26b28f3c29189db5c89cce4b73e1c93d86164f66ef88637"
+    },
+    ".agents/skills/grilling/agents/openai.yaml": {
+      "kind": "skill",
+      "skill": "grilling",
+      "sourcePath": ".agents/skills/grilling/agents/openai.yaml",
+      "sourceSha256": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b",
+      "installedSha256": "1411d7df7d99b7e621a1ff8283c8133cc2464be63d064e52d8ce169c6800ee9b"
+    },
+    ".agents/skills/grilling/LICENSE": {
+      "kind": "skill",
+      "skill": "grilling",
+      "sourcePath": ".agents/skills/grilling/LICENSE",
+      "sourceSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+      "installedSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+    },
+    ".agents/skills/grilling/README.md": {
+      "kind": "skill",
+      "skill": "grilling",
+      "sourcePath": ".agents/skills/grilling/README.md",
+      "sourceSha256": "acff03a0a85f92c0590156145d86d6b2c75d7c10cb6a7cdc1ea00df86b6c1a57",
+      "installedSha256": "acff03a0a85f92c0590156145d86d6b2c75d7c10cb6a7cdc1ea00df86b6c1a57"
+    },
+    ".agents/skills/grilling/SKILL.md": {
+      "kind": "skill",
+      "skill": "grilling",
+      "sourcePath": ".agents/skills/grilling/SKILL.md",
+      "sourceSha256": "befdff1e27a1dfe2a294d5871169ac1afe16d983911daa4f32627514a48c1e15",
+      "installedSha256": "befdff1e27a1dfe2a294d5871169ac1afe16d983911daa4f32627514a48c1e15"
+    },
+    ".agents/skills/instruction-maintenance/README.md": {
+      "kind": "skill",
+      "skill": "instruction-maintenance",
+      "sourcePath": ".agents/skills/instruction-maintenance/README.md",
+      "sourceSha256": "57780de15185567c55c899c794f38e2a342c83e7e539d775d063be85181972d0",
+      "installedSha256": "57780de15185567c55c899c794f38e2a342c83e7e539d775d063be85181972d0"
+    },
+    ".agents/skills/instruction-maintenance/SKILL.md": {
+      "kind": "skill",
+      "skill": "instruction-maintenance",
+      "sourcePath": ".agents/skills/instruction-maintenance/SKILL.md",
+      "sourceSha256": "6219712590291177f5fa1f251763a33a2d5a13f97386690dc1125a65d6ba81be",
+      "installedSha256": "6219712590291177f5fa1f251763a33a2d5a13f97386690dc1125a65d6ba81be"
+    },
+    ".agents/skills/isolated-workspace/README.md": {
+      "kind": "skill",
+      "skill": "isolated-workspace",
+      "sourcePath": ".agents/skills/isolated-workspace/README.md",
+      "sourceSha256": "23756760cdc5b3084e5a417d9eae983dba462f4109adfa210708829813997bee",
+      "installedSha256": "23756760cdc5b3084e5a417d9eae983dba462f4109adfa210708829813997bee"
+    },
+    ".agents/skills/isolated-workspace/scripts/create.test.ts": {
+      "kind": "skill",
+      "skill": "isolated-workspace",
+      "sourcePath": ".agents/skills/isolated-workspace/scripts/create.test.ts",
+      "sourceSha256": "f659c217db110163c8de2e40f33770dd47e72370f9d65f2f1b84f6c0fd9f6658",
+      "installedSha256": "f659c217db110163c8de2e40f33770dd47e72370f9d65f2f1b84f6c0fd9f6658"
+    },
+    ".agents/skills/isolated-workspace/scripts/create.ts": {
+      "kind": "skill",
+      "skill": "isolated-workspace",
+      "sourcePath": ".agents/skills/isolated-workspace/scripts/create.ts",
+      "sourceSha256": "78d6bc6a2e15c7f1f733ceca7e0c3f6e0d2982530ac48e041a69802ee7ab75f0",
+      "installedSha256": "78d6bc6a2e15c7f1f733ceca7e0c3f6e0d2982530ac48e041a69802ee7ab75f0"
+    },
+    ".agents/skills/isolated-workspace/scripts/lib.ts": {
+      "kind": "skill",
+      "skill": "isolated-workspace",
+      "sourcePath": ".agents/skills/isolated-workspace/scripts/lib.ts",
+      "sourceSha256": "1d8ab541a365f00f2c5438d64cf6d91eed6a61595706075b20473860b4bb8961",
+      "installedSha256": "1d8ab541a365f00f2c5438d64cf6d91eed6a61595706075b20473860b4bb8961"
+    },
+    ".agents/skills/isolated-workspace/SKILL.md": {
+      "kind": "skill",
+      "skill": "isolated-workspace",
+      "sourcePath": ".agents/skills/isolated-workspace/SKILL.md",
+      "sourceSha256": "361270152b4c5151763b2e886990e8ba77f0f2abb5ebe31dffbdaba7f3e87fbb",
+      "installedSha256": "361270152b4c5151763b2e886990e8ba77f0f2abb5ebe31dffbdaba7f3e87fbb"
+    },
+    ".agents/skills/sync-agent-assets/assets/ai-assets-lock.schema.json": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/assets/ai-assets-lock.schema.json",
+      "sourceSha256": "a95770606ef34897353edce5c29b7f311cbed90febabfbcb9a20791be5082d38",
+      "installedSha256": "a95770606ef34897353edce5c29b7f311cbed90febabfbcb9a20791be5082d38"
+    },
+    ".agents/skills/sync-agent-assets/assets/selection.schema.json": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/assets/selection.schema.json",
+      "sourceSha256": "00a849c62b84b65a491512efd33130c722cd067836f56059dff198c1f34fe130",
+      "installedSha256": "00a849c62b84b65a491512efd33130c722cd067836f56059dff198c1f34fe130"
+    },
+    ".agents/skills/sync-agent-assets/assets/skill-catalog.json": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/assets/skill-catalog.json",
+      "sourceSha256": "917b7e6257a1dc13194771cae09c3e7f038850b41b77709c39bc8b5885916948",
+      "installedSha256": "917b7e6257a1dc13194771cae09c3e7f038850b41b77709c39bc8b5885916948"
+    },
+    ".agents/skills/sync-agent-assets/assets/skill-catalog.schema.json": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/assets/skill-catalog.schema.json",
+      "sourceSha256": "a0f75a3bb1c68d5aadc172ebb9bc9ced46aaf7199e8aaa4979ccd5a1651fba29",
+      "installedSha256": "a0f75a3bb1c68d5aadc172ebb9bc9ced46aaf7199e8aaa4979ccd5a1651fba29"
+    },
+    ".agents/skills/sync-agent-assets/references/data-model.md": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/references/data-model.md",
+      "sourceSha256": "a17de98a74816c27a372dc1c0366be4fa6d3bdd18ee944f15cbbf326b609becd",
+      "installedSha256": "a17de98a74816c27a372dc1c0366be4fa6d3bdd18ee944f15cbbf326b609becd"
+    },
+    ".agents/skills/sync-agent-assets/scripts/sync-agent-assets.mjs": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/scripts/sync-agent-assets.mjs",
+      "sourceSha256": "22cca129727fb5330744e2e4316370a4ade3c2f0bec3792f6b45444e28a04d40",
+      "installedSha256": "22cca129727fb5330744e2e4316370a4ade3c2f0bec3792f6b45444e28a04d40"
+    },
+    ".agents/skills/sync-agent-assets/scripts/sync-agent-assets.test.mjs": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/scripts/sync-agent-assets.test.mjs",
+      "sourceSha256": "9dc05546f66077287a2c85110c4eea16fb3237c280094463a1934c36a27d58ee",
+      "installedSha256": "9dc05546f66077287a2c85110c4eea16fb3237c280094463a1934c36a27d58ee"
+    },
+    ".agents/skills/sync-agent-assets/SKILL.md": {
+      "kind": "skill",
+      "skill": "sync-agent-assets",
+      "sourcePath": ".agents/skills/sync-agent-assets/SKILL.md",
+      "sourceSha256": "19d966929889bb62ae3e5ea8b33a8f6f7ccdb6ef419f0a962868b73840aa0d04",
+      "installedSha256": "19d966929889bb62ae3e5ea8b33a8f6f7ccdb6ef419f0a962868b73840aa0d04"
+    },
+    ".agents/skills/unslop/LICENSE": {
+      "kind": "skill",
+      "skill": "unslop",
+      "sourcePath": ".agents/skills/unslop/LICENSE",
+      "sourceSha256": "bc957ca6bee02792566a1a028d105e02e247c6e77cf057061674273da77b200e",
+      "installedSha256": "bc957ca6bee02792566a1a028d105e02e247c6e77cf057061674273da77b200e"
+    },
+    ".agents/skills/unslop/README.md": {
+      "kind": "skill",
+      "skill": "unslop",
+      "sourcePath": ".agents/skills/unslop/README.md",
+      "sourceSha256": "60f662d9e0d7aeb32f8f0629c523da132fcc84bcb26c6814e270002f0069794b",
+      "installedSha256": "60f662d9e0d7aeb32f8f0629c523da132fcc84bcb26c6814e270002f0069794b"
+    },
+    ".agents/skills/unslop/SKILL.md": {
+      "kind": "skill",
+      "skill": "unslop",
+      "sourcePath": ".agents/skills/unslop/SKILL.md",
+      "sourceSha256": "ccab208e315ce05e2fab8eeee2f7879f1289b5c6844840b2d307adf31c79144f",
+      "installedSha256": "ccab208e315ce05e2fab8eeee2f7879f1289b5c6844840b2d307adf31c79144f"
+    },
+    ".agents/skills/wait-what/agents/openai.yaml": {
+      "kind": "skill",
+      "skill": "wait-what",
+      "sourcePath": ".agents/skills/wait-what/agents/openai.yaml",
+      "sourceSha256": "b41faadf741d51e4ea184148b2d1854d93f947aaf754c7844f70a00f04194999",
+      "installedSha256": "b41faadf741d51e4ea184148b2d1854d93f947aaf754c7844f70a00f04194999"
+    },
+    ".agents/skills/wait-what/LICENSE": {
+      "kind": "skill",
+      "skill": "wait-what",
+      "sourcePath": ".agents/skills/wait-what/LICENSE",
+      "sourceSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5",
+      "installedSha256": "0e7ac423bf2c6e223b7c5b156f8cf72da49d748e56a1641402c31f22ad07dbb5"
+    },
+    ".agents/skills/wait-what/README.md": {
+      "kind": "skill",
+      "skill": "wait-what",
+      "sourcePath": ".agents/skills/wait-what/README.md",
+      "sourceSha256": "ab4887e5219f8b3fdc78b7b5811783c76f0d0395b1f0071a4f7d97cafbe7aca8",
+      "installedSha256": "ab4887e5219f8b3fdc78b7b5811783c76f0d0395b1f0071a4f7d97cafbe7aca8"
+    },
+    ".agents/skills/wait-what/SKILL.md": {
+      "kind": "skill",
+      "skill": "wait-what",
+      "sourcePath": ".agents/skills/wait-what/SKILL.md",
+      "sourceSha256": "d961bb37defd975c539427edb8f450cdbccdcdd552e213c1ece46676a7970905",
+      "installedSha256": "d961bb37defd975c539427edb8f450cdbccdcdd552e213c1ece46676a7970905"
+    },
+    "AGENTS.md": {
+      "kind": "instruction",
+      "sourcePath": "AGENTS.md",
+      "sourceSha256": "55aca2889b0bf0fb9c95605fb85f16342498a9cb77759f1772da6159dc802f31",
+      "installedSha256": "f4e833644dda355563d37da5f7052d651effd387987b4c944e220923ecdda608"
+    },
+    "CLAUDE.md": {
+      "kind": "instruction",
+      "sourcePath": "CLAUDE.md",
+      "sourceSha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49",
+      "installedSha256": "336cc4fbf19beaada7ccf9986414fa91851a8d7a07dfb3ccbe800a69eed0ab49"
+    },
+    "CONTRIBUTING.md": {
+      "kind": "instruction",
+      "sourcePath": "CONTRIBUTING.md",
+      "sourceSha256": "b64931906de21b1528bfe6f55cc038882222f023afd136d45ac9a9ab11f9811c",
+      "installedSha256": "e3978508daee3289f1667fb00bcfc6156b7863b79c7b1c56dfaff86551a6079d"
+    },
+    "VALIDATION.md": {
+      "kind": "instruction",
+      "sourcePath": "VALIDATION.md",
+      "sourceSha256": "f198530ff01b37e8b45a321c7e13a3f10c21341b7d1810d298e4bef57e922ed3",
+      "installedSha256": "362d535ed10ebbea0efa6c1397a1e84a35a2608ac93bd56d83ba54c8b2b11cf9"
+    }
+  },
+  "projections": {
+    ".claude/skills/asd-ste100-technical": {
+      "harness": "claude-code",
+      "skill": "asd-ste100-technical",
+      "target": "../../.agents/skills/asd-ste100-technical"
+    },
+    ".claude/skills/cleanup-workspaces": {
+      "harness": "claude-code",
+      "skill": "cleanup-workspaces",
+      "target": "../../.agents/skills/cleanup-workspaces"
+    },
+    ".claude/skills/code-review": {
+      "harness": "claude-code",
+      "skill": "code-review",
+      "target": "../../.agents/skills/code-review"
+    },
+    ".claude/skills/coding": {
+      "harness": "claude-code",
+      "skill": "coding",
+      "target": "../../.agents/skills/coding"
+    },
+    ".claude/skills/coding-bash": {
+      "harness": "claude-code",
+      "skill": "coding-bash",
+      "target": "../../.agents/skills/coding-bash"
+    },
+    ".claude/skills/coding-lua": {
+      "harness": "claude-code",
+      "skill": "coding-lua",
+      "target": "../../.agents/skills/coding-lua"
+    },
+    ".claude/skills/coding-sh": {
+      "harness": "claude-code",
+      "skill": "coding-sh",
+      "target": "../../.agents/skills/coding-sh"
+    },
+    ".claude/skills/grill-me": {
+      "harness": "claude-code",
+      "skill": "grill-me",
+      "target": "../../.agents/skills/grill-me"
+    },
+    ".claude/skills/grilling": {
+      "harness": "claude-code",
+      "skill": "grilling",
+      "target": "../../.agents/skills/grilling"
+    },
+    ".claude/skills/instruction-maintenance": {
+      "harness": "claude-code",
+      "skill": "instruction-maintenance",
+      "target": "../../.agents/skills/instruction-maintenance"
+    },
+    ".claude/skills/isolated-workspace": {
+      "harness": "claude-code",
+      "skill": "isolated-workspace",
+      "target": "../../.agents/skills/isolated-workspace"
+    },
+    ".claude/skills/sync-agent-assets": {
+      "harness": "claude-code",
+      "skill": "sync-agent-assets",
+      "target": "../../.agents/skills/sync-agent-assets"
+    },
+    ".claude/skills/unslop": {
+      "harness": "claude-code",
+      "skill": "unslop",
+      "target": "../../.agents/skills/unslop"
+    },
+    ".claude/skills/wait-what": {
+      "harness": "claude-code",
+      "skill": "wait-what",
+      "target": "../../.agents/skills/wait-what"
+    }
+  }
+}
