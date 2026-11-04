@@ -192,15 +192,18 @@ local extra_tools = {
   },
 }
 
+--- Joins path components using Neovim's platform-aware path rules.
 local function joinpath(...)
   return vim.fs.joinpath(...)
 end
 
+--- Reads a text file and returns an empty string when it is unavailable.
 local function read_file(path)
   local ok, lines = pcall(vim.fn.readfile, path)
   return ok and table.concat(lines, "\n") or ""
 end
 
+--- Decodes a JSON file and returns an empty table for missing or invalid data.
 local function read_json(path)
   local contents = read_file(path)
   if contents == "" then
@@ -210,6 +213,7 @@ local function read_json(path)
   return ok and type(decoded) == "table" and decoded or {}
 end
 
+--- Normalizes list-style or map-style configuration into a lookup set.
 local function list_to_set(values)
   local result = {}
   if type(values) ~= "table" then
@@ -225,6 +229,7 @@ local function list_to_set(values)
   return result
 end
 
+--- Returns the effective tool-guard settings.
 local function settings()
   local configured = type(vim.g.tool_guard) == "table" and vim.g.tool_guard or {}
   return {
@@ -233,6 +238,7 @@ local function settings()
   }
 end
 
+--- Returns the LazyVim extras enabled in lazyvim.json.
 local function enabled_extras()
   local config = read_json(joinpath(vim.fn.stdpath("config"), "lazyvim.json"))
   local extras = {}
@@ -244,12 +250,14 @@ local function enabled_extras()
   return extras
 end
 
+--- Appends a source value when it is not already present.
 local function add_source(values, value)
   if not vim.tbl_contains(values, value) then
     values[#values + 1] = value
   end
 end
 
+--- Adds or merges a tool unless the user ignored it.
 local function add_tool(tools, tool, ignore)
   if ignore[tool.id] or ignore[tool.label] then
     return
@@ -285,6 +293,7 @@ local function add_tool(tools, tool, ignore)
   }
 end
 
+--- Returns whether any executable alternative is available.
 local function executable_available(commands)
   for _, command in ipairs(commands) do
     if vim.fn.executable(vim.fn.expand(command)) == 1 then
@@ -294,6 +303,7 @@ local function executable_available(commands)
   return false
 end
 
+--- Returns a stable sorted list of table keys.
 local function sorted_keys(values)
   local result = {}
   for value in pairs(values) do
@@ -303,6 +313,7 @@ local function sorted_keys(values)
   return result
 end
 
+--- Returns a plugin's merged Mason ensure_installed list.
 local function ensure_installed(plugin_name)
   local ok, lazyvim = pcall(require, "lazyvim.util")
   if not ok then
@@ -312,6 +323,7 @@ local function ensure_installed(plugin_name)
   return type(opts.ensure_installed) == "table" and opts.ensure_installed or {}
 end
 
+--- Adds a Mason package and records the configuration source.
 local function add_mason_package(packages, package, source)
   if type(package) ~= "string" or package == "" then
     return
@@ -320,6 +332,30 @@ local function add_mason_package(packages, package, source)
   add_source(packages[package], source)
 end
 
+--- Adds enabled LSP servers that are eligible for automatic Mason installation.
+local function add_lsp_server_packages(packages, lsp_mapping)
+  local ok, lazyvim = pcall(require, "lazyvim.util")
+  if not ok then
+    return
+  end
+
+  local servers = lazyvim.opts("nvim-lspconfig").servers or {}
+  for server, server_opts in pairs(servers) do
+    if server ~= "*" then
+      if server_opts == true then
+        server_opts = {}
+      elseif not server_opts then
+        server_opts = { enabled = false }
+      end
+      local package = lsp_mapping[server]
+      if type(server_opts) == "table" and server_opts.enabled ~= false and server_opts.mason ~= false and package then
+        add_mason_package(packages, package, "nvim-lspconfig")
+      end
+    end
+  end
+end
+
+--- Collects Mason packages configured directly and through LSP or DAP adapters.
 local function desired_mason_packages()
   local packages = {}
 
@@ -334,6 +370,7 @@ local function desired_mason_packages()
   if mappings_ok then
     lsp_mapping = mappings.lspconfig_to_package or {}
   end
+  add_lsp_server_packages(packages, lsp_mapping)
   for _, server in ipairs(ensure_installed("mason-lspconfig.nvim")) do
     add_mason_package(packages, lsp_mapping[server] or server, "mason-lspconfig.nvim")
   end
@@ -345,6 +382,7 @@ local function desired_mason_packages()
   return packages
 end
 
+--- Adds unavailable configured Mason packages to the tool inventory.
 local function add_mason_tools(tools, ignore)
   local registry_ok, registry = pcall(require, "mason-registry")
   if not registry_ok then
@@ -368,6 +406,7 @@ local function add_mason_tools(tools, ignore)
   end
 end
 
+--- Returns whether the current directory contains a supported .NET project marker.
 local function is_dotnet_project()
   for _, pattern in ipairs({ "*.csproj", "*.fsproj", "*.sln", "global.json" }) do
     if #vim.fn.glob(joinpath(vim.fn.getcwd(), pattern), false, true) > 0 then
@@ -377,6 +416,7 @@ local function is_dotnet_project()
   return false
 end
 
+--- Adds platform-aware custom plugin and project tools.
 local function add_custom_tools(tools, ignore)
   local is_windows = vim.uv.os_uname().sysname == "Windows_NT"
   if not is_windows then
@@ -417,6 +457,7 @@ local function add_custom_tools(tools, ignore)
   end
 end
 
+--- Builds the complete deduplicated tool inventory.
 local function collect_tools(ignore)
   local tools = {}
   for _, tool in ipairs(core_tools) do
@@ -435,10 +476,12 @@ local function collect_tools(ignore)
   return tools
 end
 
+--- Sorts report items by their display labels.
 local function item_sort(left, right)
   return left.label:lower() < right.label:lower()
 end
 
+--- Inspects configured tools and returns grouped missing dependencies.
 function M.inspect(opts)
   opts = opts or {}
   local configured = settings()
@@ -475,10 +518,12 @@ function M.inspect(opts)
   return report
 end
 
+--- Returns the state-file path used for cached reports.
 local function cache_path()
   return joinpath(vim.fn.stdpath("state"), "tool-guard.json")
 end
 
+--- Builds a cache fingerprint from plugins, configuration, environment, and project state.
 local function fingerprint(configured)
   local uname = vim.uv.os_uname()
   local version = vim.version()
@@ -502,10 +547,12 @@ local function fingerprint(configured)
     uname.sysname,
     uname.machine,
     vim.env.PATH or "",
+    tostring(is_dotnet_project()),
   }
   return vim.fn.sha256(table.concat(parts, "\0"))
 end
 
+--- Returns a valid cached report for the fingerprint and TTL.
 local function read_cache(key, ttl)
   local cached = read_json(cache_path())
   if cached.version ~= CACHE_VERSION or cached.key ~= key or type(cached.report) ~= "table" then
@@ -518,6 +565,7 @@ local function read_cache(key, ttl)
   return cached.report
 end
 
+--- Writes a report cache and returns its success state and error.
 local function write_cache(key, report)
   local path = cache_path()
   local ok, error = pcall(function()
@@ -533,6 +581,7 @@ local function write_cache(key, report)
   return ok, error
 end
 
+--- Formats one report section when it contains items.
 local function format_items(title, items)
   if #items == 0 then
     return nil
@@ -544,6 +593,7 @@ local function format_items(title, items)
   return table.concat(lines, "\n")
 end
 
+--- Formats required and optional missing tools for display.
 function M.format(report)
   local sections = {}
   local required = format_items("Required", report.required or {})
@@ -557,12 +607,14 @@ function M.format(report)
   return table.concat(sections, "\n\n")
 end
 
+--- Hides the active Snacks progress notification when available.
 local function hide_spinner()
   if _G.Snacks and Snacks.notifier then
     pcall(Snacks.notifier.hide, NOTIFICATION_ID)
   end
 end
 
+--- Starts a replaceable Snacks spinner and returns its stop function.
 local function start_spinner()
   if not (_G.Snacks and Snacks.notifier) then
     return function() end
@@ -571,6 +623,7 @@ local function start_spinner()
   local frames = { "⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏" }
   local frame = 0
   local timer = vim.uv.new_timer()
+  --- Renders the next spinner frame.
   local function render()
     frame = frame % #frames + 1
     vim.notify("Checking plugin tool dependencies…", vim.log.levels.INFO, {
@@ -591,6 +644,7 @@ local function start_spinner()
   end
 end
 
+--- Displays a grouped result notification according to startup quietness.
 local function notify_report(report, quiet_if_ok)
   local missing = #(report.required or {}) + #(report.optional or {})
   if missing == 0 then
@@ -635,6 +689,7 @@ local function notify_report(report, quiet_if_ok)
   })
 end
 
+--- Checks tools through the cache or a fresh inspection.
 function M.check(opts)
   opts = opts or {}
   local configured = settings()
@@ -678,6 +733,7 @@ function M.check(opts)
   end, 10)
 end
 
+--- Registers the manual command and delayed startup check.
 function M.setup()
   vim.api.nvim_create_user_command("GuardTools", function(command)
     M.check({ force = command.bang, quiet_if_ok = false })
