@@ -4,5 +4,7 @@ if has_ui2 then
   ui2.enable()
 end
 
+require("config.guard").setup()
+
 -- bootstrap lazy.nvim, LazyVim and your plugins
 require("config.lazy")
