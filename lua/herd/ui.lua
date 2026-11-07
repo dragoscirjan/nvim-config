@@ -1,4 +1,5 @@
 local M = {}
+local View = require("herd.view")
 local MAX_TEXT = 2 * 1024 * 1024
 local MAX_LINES = 20000
 local TRUNCATED = "[Herd transcript truncated; Pi's persistent session retains its own history.]\n"
@@ -165,33 +166,17 @@ function M.create(session, submit, hide, on_delete)
   )
 end
 
---- Displays a hidden session in a normal right-hand split.
+--- Displays a session in this tab's reusable floating or docked Herd view.
 function M.show(session)
   M.render(session)
-  local wins = vim.fn.win_findbuf(session.buf)
-  if #wins > 0 then
-    vim.api.nvim_set_current_win(wins[1])
-  else
-    vim.cmd("botright vsplit")
-    vim.api.nvim_win_set_buf(0, session.buf)
-    vim.wo.wrap = true
-    vim.wo.number = false
-    vim.wo.relativenumber = false
-  end
+  View.show(session.buf)
   vim.api.nvim_win_set_cursor(0, { vim.api.nvim_buf_line_count(session.buf), 0 })
   vim.cmd.startinsert({ bang = true })
 end
 
---- Hides session windows, retaining their buffers and subprocesses.
-function M.hide(session)
-  vim.cmd.stopinsert()
-  for _, win in ipairs(vim.fn.win_findbuf(session.buf)) do
-    if #vim.api.nvim_tabpage_list_wins(vim.api.nvim_win_get_tabpage(win)) > 1 then
-      vim.api.nvim_win_close(win, false)
-    else
-      vim.api.nvim_win_set_buf(win, vim.api.nvim_create_buf(true, false))
-    end
-  end
+--- Hides this tab's Herd view, retaining its buffers and subprocesses.
+function M.hide()
+  View.hide()
 end
 
 --- Replaces only the editable prompt line with extension-provided text.
@@ -220,6 +205,7 @@ local function editor(request, finish)
     row = math.max(0, math.floor((vim.o.lines - height) / 2) - 1),
     col = math.max(0, math.floor((vim.o.columns - width) / 2)),
     border = "rounded",
+    zindex = 60, -- Above the Herd popup, below native completion and command-line surfaces.
     title = " " .. M.clean(request.title or "Pi input") .. " (Ctrl-S: send, q: cancel) ",
   })
   local closed = false

@@ -98,6 +98,9 @@ function Session:receive(event)
     elseif pending and pending.callback then
       pending.callback(event.data or {})
     end
+  elseif event.type == "session_info_changed" then
+    self.name = type(event.name) == "string" and event.name or nil
+    self:emit({ type = "herd_state" })
   elseif event.type == "agent_start" then
     self.runs = self.runs + 1
     self.running = true
@@ -200,6 +203,7 @@ function Session:start()
     self.ready = true
     self.pi_session_id = state.sessionId
     self.session_file = state.sessionFile
+    self.name = type(state.sessionName) == "string" and state.sessionName or nil
     self.running = state.isStreaming == true
     self:set_state(self.running and "running" or "idle")
   end)

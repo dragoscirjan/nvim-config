@@ -1,10 +1,12 @@
 -- Pi Herd prototype. Requires an installed Pi CLI with the documented JSONL RPC protocol.
 -- :HerdNew [root] creates a persistent Pi session using the user's normal Pi configuration.
--- Enter sends a prompt/follow-up; Normal mode q hides its split without stopping Pi.
+-- Enter sends a prompt/follow-up; Normal mode q hides its view without stopping Pi.
 -- Sessions are listed buffers: use normal buffer/window/tab navigation. Wiping a buffer stops its Pi.
 -- Neovim exit stops all owned processes; conversation files remain in Pi's session storage.
 -- Keys: <leader>h list, hn new, ht toggle, h]/h[ cycle, hs selected lines, hk stop, ha abort, hr steer.
 -- Normal commands: HerdNew, HerdList, HerdToggle, HerdStop, HerdAbort, HerdSteer [text].
+-- Herd opens in a floating popup; HerdLayout / <leader>hf toggles docking without restarting Pi.
+-- HerdFloat and HerdDock select a presentation explicitly; setup({ view = "split" }) changes the default.
 -- Transcript: full textual final tool results, up to 2 MiB/20,000 lines; images are represented by labels.
 -- Pi tools can independently truncate results; the frontend does not fetch external output files.
 -- Optional setup({ command = { "pi", "--mode", "rpc", ... } }) overrides launch arguments.
@@ -12,6 +14,7 @@
 local M = { sessions = {}, current = nil }
 local Session = require("herd.session")
 local UI = require("herd.ui")
+local View = require("herd.view")
 local symbols = { starting = "…", idle = "○", running = "◐", waiting = "?", error = "!", stopped = "×" }
 local configured = false
 local options = {}
@@ -25,11 +28,19 @@ function M.active()
       return session
     end
   end
+  local selected = View.buffer()
+  for _, session in ipairs(M.sessions) do
+    if session.buf == selected then
+      M.current = session
+      return session
+    end
+  end
   return M.current
 end
 
 --- Redraws the statusline without requiring Lualine to be loaded.
 local function refresh()
+  View.refresh()
   local lualine = package.loaded.lualine
   if lualine and type(lualine.refresh) == "function" then
     lualine.refresh({ place = { "statusline" } })
@@ -82,7 +93,7 @@ function M.default_root()
   return vim.fn.getcwd()
 end
 
---- Displays an agent in a normal split and clears its hidden-completion indicator.
+--- Displays an agent in this tab's Herd view and clears its hidden-completion indicator.
 function M.show(session)
   if not session or not vim.api.nvim_buf_is_valid(session.buf) then
     return
@@ -159,12 +170,7 @@ function M.list()
   vim.ui.select(M.sessions, {
     prompt = "Herd sessions",
     format_item = function(session)
-      return ("%s Pi #%d — %s%s"):format(
-        symbols[session.state] or "!",
-        session.id,
-        session.root,
-        session.title and " — " .. session.title or ""
-      )
+      return ("%s π %s — %s"):format(M.symbol(session), M.label(session), session.root)
     end,
   }, function(session)
     if session then
@@ -249,12 +255,143 @@ function M.selection()
   M.send(session, ("Selected lines %d-%d from %s (possibly unsaved):\n%s"):format(first, last, path, text))
 end
 
---- Returns compact, escaped Lualine entries for every instance.
+--- Changes the selected session's window presentation without changing process ownership.
+function M.layout(mode)
+  local session = M.active()
+  if not session then
+    vim.notify("Create a Pi session with :HerdNew first", vim.log.levels.WARN)
+    return
+  end
+  UI.render(session)
+  View.layout(mode, session.buf)
+  M.current = session
+  session.unread = false
+  refresh()
+end
+
+--- Returns a safe display name without interpreting statusline syntax from user/model text.
+function M.label(session)
+  local name = type(session.name) == "string" and UI.clean(session.name):gsub("[\r\n\t]", " ") or ""
+  return name ~= "" and name or ("Session %d"):format(session.id)
+end
+
+--- Renames a connected Pi session and waits for acknowledgement before updating its tab.
+function M.rename(name, session)
+  session = session or M.active()
+  if not session or not session.ready or session.closed or session.stopping then
+    vim.notify("Pi must be ready to rename its session", vim.log.levels.WARN)
+    return
+  end
+  if name == nil then
+    vim.ui.input({ prompt = "Session name: ", default = M.label(session) }, function(value)
+      if value ~= nil then
+        M.rename(value, session)
+      end
+    end)
+    return
+  end
+  name = UI.clean(name):gsub("[\r\n\t]", " "):match("^%s*(.-)%s*$")
+  if name == "" or vim.fn.strchars(name) > 80 then
+    vim.notify("Choose a session name between 1 and 80 characters", vim.log.levels.WARN)
+    return
+  end
+  local ok, err = session:request("set_session_name", { name = name }, function()
+    session.name = name
+    refresh()
+  end)
+  if not ok then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
+end
+
+--- Confirms destructive tab closure; stopping a session alone still retains its transcript.
+function M.close(session)
+  session = session or M.active()
+  if not session or session.close_pending then
+    return
+  end
+  session.close_pending = true
+  vim.ui.select({ "Cancel", "Close session" }, {
+    prompt = "Close " .. M.label(session) .. "? Stops Pi and discards its unsent draft.",
+  }, function(choice)
+    session.close_pending = nil
+    if choice ~= "Close session" then
+      return
+    end
+    local replacement
+    for i, existing in ipairs(M.sessions) do
+      if existing == session then
+        replacement = M.sessions[i + 1] or M.sessions[i - 1]
+        break
+      end
+    end
+    if not vim.api.nvim_buf_is_valid(session.buf) then
+      return
+    end
+    if replacement then
+      UI.render(replacement)
+    end
+    View.remove(session.buf, replacement and replacement.buf)
+    UI.cancel_dialogs(session)
+    session:stop()
+    vim.api.nvim_buf_delete(session.buf, { force = true })
+    refresh()
+  end)
+end
+
+--- Routes a winbar click through a fixed Lua callback, never through generated commands.
+function M.tab_click(id, clicks, button)
+  if button ~= "l" then
+    return
+  end
+  local win = vim.fn.getmousepos().winid
+  vim.schedule(function()
+    if win > 0 and vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_set_current_win(win)
+    end
+    if id == 0 then
+      if clicks == 1 then
+        M.new()
+      end
+      return
+    end
+    for _, session in ipairs(M.sessions) do
+      if session.id == id then
+        M.show(session)
+        if clicks >= 2 then
+          M.rename(nil, session)
+        end
+        return
+      end
+    end
+  end)
+end
+
+--- Routes a close-button click separately from tab selection and double-click rename.
+function M.tab_close(id, clicks, button)
+  if button ~= "l" or clicks ~= 1 then
+    return
+  end
+  vim.schedule(function()
+    for _, session in ipairs(M.sessions) do
+      if session.id == id then
+        M.close(session)
+        return
+      end
+    end
+  end)
+end
+
+--- Returns the shared session-state icon for the statusline and Herd's own session bar.
+function M.symbol(session)
+  return session.state == "idle" and session.unread and "✓" or symbols[session.state] or "!"
+end
+
+--- Returns compact Lualine entries for every instance.
 function M.statusline()
   local parts = {}
   for _, session in ipairs(M.sessions) do
-    local symbol = session.state == "idle" and session.unread and "✓" or symbols[session.state] or "!"
-    parts[#parts + 1] = ("π%d%s"):format(session.id, symbol)
+    parts[#parts + 1] = ("π%d%s"):format(session.id, M.symbol(session))
   end
   return table.concat(parts, " ")
 end
@@ -262,6 +399,7 @@ end
 --- Installs commands and mappings once; no Pi process is started until requested.
 function M.setup(opts)
   options = vim.tbl_extend("force", options, opts or {})
+  View.setup(options)
   if configured then
     return
   end
@@ -276,7 +414,33 @@ function M.setup(opts)
     HerdList = { M.list },
     HerdToggle = { M.toggle },
     HerdStop = { M.stop },
+    HerdClose = {
+      function()
+        M.close()
+      end,
+    },
+    HerdRename = {
+      function(cmd)
+        M.rename(cmd.args ~= "" and cmd.args or nil)
+      end,
+      { nargs = "*" },
+    },
     HerdAbort = { M.abort },
+    HerdLayout = {
+      function()
+        M.layout()
+      end,
+    },
+    HerdFloat = {
+      function()
+        M.layout("float")
+      end,
+    },
+    HerdDock = {
+      function()
+        M.layout("split")
+      end,
+    },
     HerdSteer = {
       function(cmd)
         M.steer(cmd.args)
@@ -295,6 +459,13 @@ function M.setup(opts)
     { "h", M.list, "Herd sessions" },
     { "hn", M.new, "New Pi session" },
     { "ht", M.toggle, "Toggle Herd" },
+    {
+      "hf",
+      function()
+        M.layout()
+      end,
+      "Float/dock Herd",
+    },
     {
       "h]",
       function()
@@ -326,6 +497,8 @@ function M.setup(opts)
         session.unread = false
         UI.render(session)
         refresh()
+      else
+        View.refresh()
       end
     end,
   })
