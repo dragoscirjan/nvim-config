@@ -1,10 +1,12 @@
 -- Pi Herd prototype. Requires an installed Pi CLI with the documented JSONL RPC protocol.
 -- :HerdNew [root] creates a persistent Pi session using the user's normal Pi configuration.
--- Enter sends a prompt/follow-up; Normal mode q hides its split without stopping Pi.
+-- Enter sends a prompt/follow-up; Normal mode q hides its view without stopping Pi.
 -- Sessions are listed buffers: use normal buffer/window/tab navigation. Wiping a buffer stops its Pi.
 -- Neovim exit stops all owned processes; conversation files remain in Pi's session storage.
 -- Keys: <leader>h list, hn new, ht toggle, h]/h[ cycle, hs selected lines, hk stop, ha abort, hr steer.
 -- Normal commands: HerdNew, HerdList, HerdToggle, HerdStop, HerdAbort, HerdSteer [text].
+-- Herd opens in a floating popup; HerdLayout / <leader>hf toggles docking without restarting Pi.
+-- HerdFloat and HerdDock select a presentation explicitly; setup({ view = "split" }) changes the default.
 -- Transcript: full textual final tool results, up to 2 MiB/20,000 lines; images are represented by labels.
 -- Pi tools can independently truncate results; the frontend does not fetch external output files.
 -- Optional setup({ command = { "pi", "--mode", "rpc", ... } }) overrides launch arguments.
@@ -12,6 +14,7 @@
 local M = { sessions = {}, current = nil }
 local Session = require("herd.session")
 local UI = require("herd.ui")
+local View = require("herd.view")
 local symbols = { starting = "…", idle = "○", running = "◐", waiting = "?", error = "!", stopped = "×" }
 local configured = false
 local options = {}
@@ -25,11 +28,19 @@ function M.active()
       return session
     end
   end
+  local selected = View.buffer()
+  for _, session in ipairs(M.sessions) do
+    if session.buf == selected then
+      M.current = session
+      return session
+    end
+  end
   return M.current
 end
 
 --- Redraws the statusline without requiring Lualine to be loaded.
 local function refresh()
+  View.refresh()
   local lualine = package.loaded.lualine
   if lualine and type(lualine.refresh) == "function" then
     lualine.refresh({ place = { "statusline" } })
@@ -82,7 +93,7 @@ function M.default_root()
   return vim.fn.getcwd()
 end
 
---- Displays an agent in a normal split and clears its hidden-completion indicator.
+--- Displays an agent in this tab's Herd view and clears its hidden-completion indicator.
 function M.show(session)
   if not session or not vim.api.nvim_buf_is_valid(session.buf) then
     return
@@ -249,12 +260,53 @@ function M.selection()
   M.send(session, ("Selected lines %d-%d from %s (possibly unsaved):\n%s"):format(first, last, path, text))
 end
 
---- Returns compact, escaped Lualine entries for every instance.
+--- Changes the selected session's window presentation without changing process ownership.
+function M.layout(mode)
+  local session = M.active()
+  if not session then
+    vim.notify("Create a Pi session with :HerdNew first", vim.log.levels.WARN)
+    return
+  end
+  UI.render(session)
+  View.layout(mode, session.buf)
+  M.current = session
+  session.unread = false
+  refresh()
+end
+
+--- Routes a winbar click through a fixed Lua callback, never through generated commands.
+function M.tab_click(id, _, button)
+  if button ~= "l" then
+    return
+  end
+  local win = vim.fn.getmousepos().winid
+  vim.schedule(function()
+    if win > 0 and vim.api.nvim_win_is_valid(win) then
+      vim.api.nvim_set_current_win(win)
+    end
+    if id == 0 then
+      M.new()
+      return
+    end
+    for _, session in ipairs(M.sessions) do
+      if session.id == id then
+        M.show(session)
+        return
+      end
+    end
+  end)
+end
+
+--- Returns the shared session-state icon for the statusline and Herd's own session bar.
+function M.symbol(session)
+  return session.state == "idle" and session.unread and "✓" or symbols[session.state] or "!"
+end
+
+--- Returns compact Lualine entries for every instance.
 function M.statusline()
   local parts = {}
   for _, session in ipairs(M.sessions) do
-    local symbol = session.state == "idle" and session.unread and "✓" or symbols[session.state] or "!"
-    parts[#parts + 1] = ("π%d%s"):format(session.id, symbol)
+    parts[#parts + 1] = ("π%d%s"):format(session.id, M.symbol(session))
   end
   return table.concat(parts, " ")
 end
@@ -262,6 +314,7 @@ end
 --- Installs commands and mappings once; no Pi process is started until requested.
 function M.setup(opts)
   options = vim.tbl_extend("force", options, opts or {})
+  View.setup(options)
   if configured then
     return
   end
@@ -277,6 +330,21 @@ function M.setup(opts)
     HerdToggle = { M.toggle },
     HerdStop = { M.stop },
     HerdAbort = { M.abort },
+    HerdLayout = {
+      function()
+        M.layout()
+      end,
+    },
+    HerdFloat = {
+      function()
+        M.layout("float")
+      end,
+    },
+    HerdDock = {
+      function()
+        M.layout("split")
+      end,
+    },
     HerdSteer = {
       function(cmd)
         M.steer(cmd.args)
@@ -295,6 +363,13 @@ function M.setup(opts)
     { "h", M.list, "Herd sessions" },
     { "hn", M.new, "New Pi session" },
     { "ht", M.toggle, "Toggle Herd" },
+    {
+      "hf",
+      function()
+        M.layout()
+      end,
+      "Float/dock Herd",
+    },
     {
       "h]",
       function()
@@ -326,6 +401,8 @@ function M.setup(opts)
         session.unread = false
         UI.render(session)
         refresh()
+      else
+        View.refresh()
       end
     end,
   })
