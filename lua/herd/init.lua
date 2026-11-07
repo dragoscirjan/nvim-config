@@ -170,12 +170,7 @@ function M.list()
   vim.ui.select(M.sessions, {
     prompt = "Herd sessions",
     format_item = function(session)
-      return ("%s Pi #%d — %s%s"):format(
-        symbols[session.state] or "!",
-        session.id,
-        session.root,
-        session.title and " — " .. session.title or ""
-      )
+      return ("%s π %s — %s"):format(M.symbol(session), M.label(session), session.root)
     end,
   }, function(session)
     if session then
@@ -274,8 +269,78 @@ function M.layout(mode)
   refresh()
 end
 
+--- Returns a safe display name without interpreting statusline syntax from user/model text.
+function M.label(session)
+  local name = type(session.name) == "string" and UI.clean(session.name):gsub("[\r\n\t]", " ") or ""
+  return name ~= "" and name or ("Session %d"):format(session.id)
+end
+
+--- Renames a connected Pi session and waits for acknowledgement before updating its tab.
+function M.rename(name, session)
+  session = session or M.active()
+  if not session or not session.ready or session.closed or session.stopping then
+    vim.notify("Pi must be ready to rename its session", vim.log.levels.WARN)
+    return
+  end
+  if name == nil then
+    vim.ui.input({ prompt = "Session name: ", default = M.label(session) }, function(value)
+      if value ~= nil then
+        M.rename(value, session)
+      end
+    end)
+    return
+  end
+  name = UI.clean(name):gsub("[\r\n\t]", " "):match("^%s*(.-)%s*$")
+  if name == "" or vim.fn.strchars(name) > 80 then
+    vim.notify("Choose a session name between 1 and 80 characters", vim.log.levels.WARN)
+    return
+  end
+  local ok, err = session:request("set_session_name", { name = name }, function()
+    session.name = name
+    refresh()
+  end)
+  if not ok then
+    vim.notify(err, vim.log.levels.ERROR)
+  end
+end
+
+--- Confirms destructive tab closure; stopping a session alone still retains its transcript.
+function M.close(session)
+  session = session or M.active()
+  if not session or session.close_pending then
+    return
+  end
+  session.close_pending = true
+  vim.ui.select({ "Cancel", "Close session" }, {
+    prompt = "Close " .. M.label(session) .. "? Stops Pi and discards its unsent draft.",
+  }, function(choice)
+    session.close_pending = nil
+    if choice ~= "Close session" then
+      return
+    end
+    local replacement
+    for i, existing in ipairs(M.sessions) do
+      if existing == session then
+        replacement = M.sessions[i + 1] or M.sessions[i - 1]
+        break
+      end
+    end
+    if not vim.api.nvim_buf_is_valid(session.buf) then
+      return
+    end
+    if replacement then
+      UI.render(replacement)
+    end
+    View.remove(session.buf, replacement and replacement.buf)
+    UI.cancel_dialogs(session)
+    session:stop()
+    vim.api.nvim_buf_delete(session.buf, { force = true })
+    refresh()
+  end)
+end
+
 --- Routes a winbar click through a fixed Lua callback, never through generated commands.
-function M.tab_click(id, _, button)
+function M.tab_click(id, clicks, button)
   if button ~= "l" then
     return
   end
@@ -285,12 +350,32 @@ function M.tab_click(id, _, button)
       vim.api.nvim_set_current_win(win)
     end
     if id == 0 then
-      M.new()
+      if clicks == 1 then
+        M.new()
+      end
       return
     end
     for _, session in ipairs(M.sessions) do
       if session.id == id then
         M.show(session)
+        if clicks >= 2 then
+          M.rename(nil, session)
+        end
+        return
+      end
+    end
+  end)
+end
+
+--- Routes a close-button click separately from tab selection and double-click rename.
+function M.tab_close(id, clicks, button)
+  if button ~= "l" or clicks ~= 1 then
+    return
+  end
+  vim.schedule(function()
+    for _, session in ipairs(M.sessions) do
+      if session.id == id then
+        M.close(session)
         return
       end
     end
@@ -329,6 +414,17 @@ function M.setup(opts)
     HerdList = { M.list },
     HerdToggle = { M.toggle },
     HerdStop = { M.stop },
+    HerdClose = {
+      function()
+        M.close()
+      end,
+    },
+    HerdRename = {
+      function(cmd)
+        M.rename(cmd.args ~= "" and cmd.args or nil)
+      end,
+      { nargs = "*" },
+    },
     HerdAbort = { M.abort },
     HerdLayout = {
       function()

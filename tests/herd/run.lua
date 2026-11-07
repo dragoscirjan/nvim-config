@@ -37,6 +37,9 @@ end
 --- Exercises presentation changes against real Neovim buffers/windows and fake RPC children.
 local function run()
   vim.g.mapleader = " "
+  vim.o.termguicolors = true
+  vim.api.nvim_set_hl(0, "Normal", { bg = 0x202030, fg = 0xEEEEEE })
+  vim.api.nvim_set_hl(0, "NormalFloat", { bg = 0x151520, fg = 0xEEEEEE })
   herd.setup({
     command = { vim.v.progpath, "--headless", "--clean", "-u", "NONE", "-l", root .. "/tests/herd/fake_pi.lua" },
   })
@@ -81,14 +84,42 @@ local function run()
   local bar = vim.wo[popup].winbar
   local evaluated = vim.api.nvim_eval_statusline(bar, { winid = popup, use_winbar = true, highlights = true })
   check(
-    evaluated.str:find("π1", 1, true) and evaluated.str:find("π2", 1, true) and evaluated.str:find("[+]", 1, true),
+    evaluated.str:find("π Session 1", 1, true)
+      and evaluated.str:find("π Session 2", 1, true)
+      and evaluated.str:find(" + ", 1, true),
     "independent session bar renders tabs and new button"
   )
-  check(bar:find("TabLineSel", 1, true), "selected session is highlighted")
+  check(bar:find("HerdTabActive", 1, true), "selected session is highlighted")
+  check(
+    not evaluated.str:find("[", 1, true) and evaluated.str:find("×", 1, true),
+    "tabs use padding and separate close buttons, not brackets"
+  )
+  check(evaluated.str:find("○ π Session 1", 1, true), "tab labels order activity, Pi icon, and session name")
+  check(vim.wo[popup].winhighlight:find("Normal:HerdNormal", 1, true), "popup uses dedicated dark highlights")
+  local border = vim.api.nvim_win_get_config(popup).border
+  check(border == nil or border == "none" or #border == 0, "popup has no border")
+  local shaded
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if vim.wo[win].winhighlight:find("HerdBackdrop", 1, true) then
+      shaded = win
+    end
+  end
+  check(
+    shaded and vim.wo[shaded].winblend == 60 and not vim.api.nvim_win_get_config(shaded).focusable,
+    "Lazy-style backdrop is dimmed and non-focusable"
+  )
+  check(
+    vim.api.nvim_get_hl(0, { name = "HerdTabActive" }).bg ~= vim.api.nvim_get_hl(0, { name = "HerdTab" }).bg,
+    "active and inactive tabs use different background colors"
+  )
+  vim.api.nvim_set_hl(0, "NormalFloat", { bg = 0x121218, fg = 0xEEEEEE })
+  vim.api.nvim_exec_autocmds("ColorScheme", {})
+  check(vim.api.nvim_get_hl(0, { name = "HerdNormal" }).bg == 0x121218, "Herd colors follow colorscheme changes")
 
   herd.layout("split")
   check(vim.api.nvim_get_current_win() == popup, "docking preserves window identity")
   check(vim.api.nvim_win_get_config(popup).relative == "", "docked view is a normal split")
+  check(not vim.api.nvim_win_is_valid(shaded), "docking removes the backdrop")
   herd.layout("float")
   check(
     vim.api.nvim_get_current_win() == popup and vim.api.nvim_win_get_config(popup).relative == "editor",
@@ -154,6 +185,18 @@ local function run()
   herd.toggle()
   popup = vim.api.nvim_get_current_win()
   check(text(session):find("Final response: hello", 1, true), "transcript survives hide/show")
+  vim.api.nvim_win_close(popup, false)
+  wait(function()
+    for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+      if vim.wo[win].winhighlight:find("HerdBackdrop", 1, true) then
+        return false
+      end
+    end
+    return true
+  end, "manually closing the popup cleans its backdrop")
+  check(session.ready, "manual window close does not stop Pi")
+  herd.show(session)
+  popup = vim.api.nvim_get_current_win()
 
   vim.o.columns = 48
   vim.o.lines = 16
@@ -164,10 +207,10 @@ local function run()
   for i = 1, 20 do
     many[i] = { id = i, buf = i, state = "running" }
   end
-  local narrow = View.bar(many, 20, 30)
-  local display = vim.api.nvim_eval_statusline(narrow, { maxwidth = 30 }).str
+  local narrow = View.bar(many, 20, 48)
+  local display = vim.api.nvim_eval_statusline(narrow, { maxwidth = 48 }).str
   check(
-    display:find("π20", 1, true) and display:find("[+]", 1, true) and display:find("‹", 1, true),
+    display:find("π Session 20", 1, true) and display:find(" + ", 1, true) and display:find("‹", 1, true),
     "overflow keeps selected agent and controls accessible"
   )
 
@@ -198,6 +241,22 @@ local function run()
   herd.show(second)
   local tab_popup = vim.api.nvim_get_current_win()
   check(tab_popup ~= popup and vim.api.nvim_win_get_tabpage(tab_popup) == second_tab, "each tab has its own view")
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(first_tab)) do
+    if vim.wo[win].winhighlight:find("HerdBackdrop", 1, true) then
+      vim.api.nvim_win_close(win, true)
+    end
+  end
+  wait(function()
+    local counts = {}
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.wo[win].winhighlight:find("HerdBackdrop", 1, true) then
+        local tab = vim.api.nvim_win_get_tabpage(win)
+        counts[tab] = (counts[tab] or 0) + 1
+      end
+    end
+    return counts[first_tab] == 1 and counts[second_tab] == 1
+  end, "backdrop regeneration stays in its owning tab")
+  check(vim.api.nvim_get_current_tabpage() == second_tab, "foreign view refresh does not steal tab focus")
   UI.hide()
   check(
     not vim.api.nvim_win_is_valid(tab_popup) and vim.api.nvim_win_is_valid(popup),
@@ -246,6 +305,74 @@ local function run()
     #vim.api.nvim_tabpage_list_wins(0) == 1 and session.ready,
     "last-window fallback keeps Neovim and the agent alive"
   )
+
+  herd.show(session)
+  herd.rename("API 100% %{1+1}", session)
+  wait(function()
+    return session.name == "API 100% %{1+1}"
+  end, "rename waits for Pi acknowledgement")
+  local renamed = vim.api.nvim_eval_statusline(vim.wo.winbar, { use_winbar = true }).str
+  check(renamed:find("API 100% %{1+1}", 1, true), "renamed tabs escape statusline expressions and percent signs")
+  local remote_name
+  session:request("get_state", {}, function(state)
+    remote_name = state.sessionName
+  end)
+  wait(function()
+    return remote_name == session.name
+  end, "name is stored in Pi session metadata")
+  local before_name = session.name
+  herd.rename("   ", session)
+  check(session.name == before_name, "blank names do not replace a session name")
+  local original = vim.ui.input
+  vim.ui.input = function(_, callback)
+    callback("Mouse rename")
+  end
+  herd.tab_click(session.id, 2, "l")
+  wait(function()
+    return session.name == "Mouse rename"
+  end, "double click renames the selected tab")
+  vim.ui.input = original
+  check(
+    vim.fn.exists(":HerdRename") == 2 and vim.fn.exists(":HerdClose") == 2,
+    "rename and close commands are registered"
+  )
+
+  local old_select = vim.ui.select
+  local close_calls = 0
+  vim.ui.select = function(_, _, callback)
+    close_calls = close_calls + 1
+    callback("Cancel")
+  end
+  herd.tab_close(session.id, 1, "l")
+  wait(function()
+    return close_calls == 1
+  end, "mouse close asks for confirmation")
+  check(session.ready and vim.api.nvim_buf_is_valid(session.buf), "cancelling close keeps process and transcript")
+  vim.ui.select = function(_, _, callback)
+    callback("Close session")
+  end
+  check(herd.send(session, "hold"), "agent can be running during close")
+  wait(function()
+    return not next(session.pending)
+  end, "running prompt accepted")
+  herd.tab_close(session.id, 1, "l")
+  wait(function()
+    return session.closed and not vim.api.nvim_buf_is_valid(session.buf)
+  end, "confirmed close stops Pi and removes its buffer")
+  check(#herd.sessions == 1 and herd.sessions[1] == second, "closed tab is removed from session list")
+  check(
+    vim.api.nvim_get_current_buf() == second.buf and second.ready,
+    "closing active tab selects its surviving neighbor"
+  )
+  herd.close(second)
+  wait(function()
+    return second.closed
+  end, "last tab close stops its Pi process")
+  check(#herd.sessions == 0 and herd.statusline() == "", "closing last tab clears session status")
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    check(not vim.wo[win].winhighlight:find("HerdBackdrop", 1, true), "last close leaves no backdrop")
+  end
+  vim.ui.select = old_select
 end
 
 local ok, err = xpcall(run, debug.traceback)

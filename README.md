@@ -7,7 +7,7 @@ Refer to the [documentation](https://lazyvim.github.io/installation) to get star
 
 Herd manages independent Pi RPC sessions inside Neovim. Install a Pi CLI with JSONL RPC support and make `pi` available on `PATH`. Herd uses your normal Pi configuration and persistent conversation storage; it does not change agent permissions or isolate concurrent project writes.
 
-Open the session picker with `<leader>h`, or create a session with `:HerdNew`. You choose each session's working directory explicitly. The default view is a centered, focusable popup with its own session bar. Each Neovim tabpage has one reusable Herd view; selecting another agent changes that view's buffer rather than opening another window.
+Open the session picker with `<leader>h`, or create a session with `:HerdNew`. You choose each session's working directory explicitly. The default view is a centered, borderless, dark popup with its own session bar. Like `:Lazy`, it dims the code behind it when a non-transparent RGB background is available. Each Neovim tabpage has one reusable Herd view; selecting another agent changes that view's buffer rather than opening another window.
 
 | Control | Action |
 | --- | --- |
@@ -21,10 +21,14 @@ Open the session picker with `<leader>h`, or create a session with `:HerdNew`. Y
 | `<leader>ha` / `:HerdAbort` | Clear queued work and abort the active run |
 | `<leader>hr` / `:HerdSteer [text]` | Steer the selected agent |
 | `<leader>hk` / `:HerdStop` | Stop Pi but retain its transcript |
+| `:HerdRename [name]` / double-click a tab | Rename a connected Pi session |
+| `:HerdClose` / tab `×` button | Confirm, stop Pi, and remove its tab/buffer |
 
 In a Herd buffer, Enter submits a prompt or queues a follow-up if the agent is busy. Escape returns to Normal mode; `q` hides the view without stopping its processes. Use normal Neovim window navigation when docked, or `<leader>ht` to return to the popup. Docking and floating preserve the agent process, transcript, and prompt draft.
 
-The private session bar shows agent IDs and state icons. Click a session to select it, or `[+]` to create another. When the view is narrow, `‹` / `›` indicate omitted sessions; cycle with the keyboard or use the picker. The selected session stays in the visible range.
+Tabs use padded, subtly different active/inactive colors and `|` separators, without brackets. Their labels show activity first, then `π`, then `Session X` or the chosen name. Click a tab to select it, double-click to rename it, click `×` to close it after confirmation, or `+` to create another. Closing discards unsent drafts; hiding with `q` or stopping with `:HerdStop` does not remove the tab. When the view is narrow, `‹` / `›` indicate omitted sessions; cycle with the keyboard or use the picker. The selected session stays in the visible range.
+
+Names must contain 1–80 characters and are stored through Pi's session metadata. Long names are shortened only for display. Pi does not write completely empty conversations to disk until they contain a message, so an unused session's name alone does not guarantee a saved conversation.
 
 States: `○` idle, `◐` running, `?` awaiting input, `✓` finished while hidden, `!` failed, `×` stopped. Status indicators remain in Lualine when the popup is hidden. Supported Pi human-input requests open native dialogs; multiline input opens above the Herd popup.
 

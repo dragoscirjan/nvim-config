@@ -3,6 +3,7 @@ local input = vim.uv.new_pipe(false)
 input:open(0)
 local buffer = ""
 local log = assert(vim.env.HERD_TEST_LOG)
+local session_name
 
 --- Emits a complete JSONL protocol record without a terminal interface.
 local function emit(record)
@@ -18,7 +19,7 @@ local function handle(request)
       type = "response",
       id = request.id,
       success = true,
-      data = { sessionId = "fake-" .. vim.uv.os_getpid(), isStreaming = false },
+      data = { sessionId = "fake-" .. vim.uv.os_getpid(), isStreaming = false, sessionName = session_name },
     })
   elseif request.type == "prompt" then
     emit({ type = "response", id = request.id, success = true, data = { disposition = "started" } })
@@ -35,6 +36,10 @@ local function handle(request)
     if request.message ~= "hold" then
       emit({ type = "agent_settled", aborted = false })
     end
+  elseif request.type == "set_session_name" then
+    session_name = request.name
+    emit({ type = "response", id = request.id, success = true, data = {} })
+    emit({ type = "session_info_changed", name = request.name })
   elseif request.type == "clear_queue" or request.type == "abort" then
     emit({ type = "response", id = request.id, success = true, data = {} })
     if request.type == "abort" then
